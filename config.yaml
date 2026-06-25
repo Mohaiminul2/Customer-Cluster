@@ -1,0 +1,20 @@
+# Customer Segmentation — Configuration
+# Edit these values to retune the pipeline without changing code.
+
+clustering:
+  k_final: 5               # Number of K-Means clusters
+  random_state: 42
+  n_init: 20                # K-Means initializations for final model
+  k_range_start: 2
+  k_range_end: 8
+
+caps:
+  monetary_quantile: 0.99   # Cap Monetary at this percentile
+  frequency_quantile: 0.99  # Cap Frequency at this percentile
+  recency_quantile: 0.99    # Cap Recency at this percentile
+
+heatmap:
+  recency_bins: [0, 30, 90, 150, 210, 270]
+  recency_labels: ["0-30", "31-90", "91-150", "151-210", "211-270", "271+"]
+  monetary_bins: [0, 500, 2000, 5000, 20000]
+  monetary_labels: ["£0-500", "£501-2k", "£2k-5k", "£5k-20k", "£20k+"]
