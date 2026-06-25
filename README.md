@@ -24,12 +24,12 @@ This project automatically groups customers into five distinct segments based on
 
 ### Quick Set-Up Guide
 
-1. **Dataset:** [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/online+retail)
-2. **Install dependencies:** pip install -r requirements.txt
-3. **Create Data pipeline:** python3 rfm_analysis.py 
-4. **Run the Dashboard:** streamlit run app.py
+1. **Install dependencies:** pip install -r requirements.txt
+2. **Create Data pipeline:** python3 rfm_analysis.py 
+3. **Run the Dashboard:** streamlit run app.py
+4. . **Live On Cloud:** https://customer-cluster.streamlit.app/
 5. **Github Repo:** https://github.com/Mohaiminul2/Customer-Cluster/
-6. **Live On Cloud:** https://customer-cluster.streamlit.app/
+6. **Dataset:** [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/online+retail)
 
 
 ### Project Structure
