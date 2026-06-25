@@ -1,6 +1,6 @@
-# Customer Segmentation Dashboard
+# Customer Cluster
 
-An end-to-end customer segmentation system that groups customers into  business segments using **RFM analysis** and **K-Means clustering** and presented through a Python web dashboard.
+An end-to-end customer segmentation system using **RFM analysis** and **K-Means clustering** and presented through a Python web dashboard.
 
 ---
 
@@ -9,6 +9,7 @@ A retail business has thousands of customers but treats them all the same — se
 
 **The solution:** 
 This project automatically groups customers into five distinct segments based on their purchasing behaviour, then surfaces those segments in an interactive dashboard so marketing and operations teams can tailor their approach for each group.
+
 
 ### The Five Segments
 
@@ -52,6 +53,7 @@ This project automatically groups customers into five distinct segments based on
     └── test_rfm.py         # RFM scoring, clustering, edge cases
 ```
 
+
 ### RFM Scoring
 
 Each customer is scored on three dimensions using quintile binning:
@@ -64,12 +66,14 @@ Each customer is scored on three dimensions using quintile binning:
 
 `RFM_Score = R_Score + F_Score + M_Score` (range: 3-15)
 
+
 ### K-Means Clustering
 
 - Outliers capped at the 99th percentile before clustering (configurable in `config.yaml`)
 - Features standardised with `StandardScaler` (zero mean, unit variance)
 - K=5 chosen via elbow method and silhouette score analysis
 - Clusters ranked by median RFM_Score, then median Monetary, to assign business labels
+
 
 ### Future Work
 
