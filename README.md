@@ -20,7 +20,6 @@ This project automatically groups customers into five distinct segments based on
 | **At Risk** | Previously active customers going quiet | Win back before they churn |
 | **Lost / Churned** | Customers who haven't purchased in a long time | Assess whether re-engagement is worth the cost |
 
----
 
 ### Quick Set-Up Guide
 
@@ -31,7 +30,6 @@ This project automatically groups customers into five distinct segments based on
 5. **Github Repo:** https://github.com/Mohaiminul2/Customer-Cluster/
 6. **Live On Cloud:** https://customer-cluster.streamlit.app/
 
----
 
 ### Project Structure
 
@@ -54,8 +52,6 @@ This project automatically groups customers into five distinct segments based on
     └── test_rfm.py         # RFM scoring, clustering, edge cases
 ```
 
----
-
 ### RFM Scoring
 
 Each customer is scored on three dimensions using quintile binning:
@@ -74,8 +70,6 @@ Each customer is scored on three dimensions using quintile binning:
 - Features standardised with `StandardScaler` (zero mean, unit variance)
 - K=5 chosen via elbow method and silhouette score analysis
 - Clusters ranked by median RFM_Score, then median Monetary, to assign business labels
-
----
 
 ### Future Work
 
@@ -99,4 +93,3 @@ Each customer is scored on three dimensions using quintile binning:
 - **[ ] Customer lifetime value (CLV) prediction** — Build a probabilistic model (BG/NBD or Pareto/NBD) to forecast future customer value on top of historical RFM
 - **[ ] Multi-brand / multi-store support** — Extend the schema to handle multiple business units with independent or shared segmentation
 
----
