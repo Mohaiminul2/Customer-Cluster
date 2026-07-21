@@ -22,37 +22,6 @@ This project automatically groups customers into five distinct segments based on
 | Lost / Churned | Customers who haven't purchased in a long time | Assess whether re-engagement is worth the cost |
 
 
-**Quick Set-Up Guide**
-
-1. Install dependencies: pip install -r requirements.txt
-2. Create Data pipeline: python3 rfm_analysis.py 
-3. Run the Dashboard: streamlit run app.py
-4. Live On Cloud: https://customer-cluster.streamlit.app/
-5. Github Repo: https://github.com/Mohaiminul2/Customer-Cluster/
-6. Dataset download: [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/online+retail)
-
-
-**Project Structure**
-
-```
-.
-├── app.py                  # Streamlit dashboard (interactive UI)
-├── rfm_analysis.py         # Offline ML pipeline — RFM scoring, K-Means
-├── config.yaml             # Tunable pipeline parameters
-├── constants.py            # Shared colours, segment order, icons
-├── requirements.txt        # Python dependencies
-├── pyproject.toml          # Project metadata & tool config
-├── data/
-│   ├── Online Retail.xlsx  # Raw transaction dataset (23 MB, gitignored)
-│   ├── rfm_scored.csv      # Per-customer RFM scores + cluster assignments
-│   └── segment_summary.csv # Aggregated metrics per segment
-└── tests/
-    ├── conftest.py         # Shared pytest fixtures
-    ├── test_config.py      # Config loading tests
-    ├── test_constants.py   # Constants integrity tests
-    └── test_rfm.py         # RFM scoring, clustering, edge cases
-```
-
 
 **RFM Scoring**
 
