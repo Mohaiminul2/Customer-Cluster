@@ -23,7 +23,7 @@ git clone https://github.com/Mohaiminul2/Customer-Cluster.git
 cd Customer-Cluster
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt   # reproducible install (generated lockfile)
+pip install -r requirements.txt   # runtime dependencies
 # or, for development (adds pytest, pytest-cov and ruff):
 pip install -e .[dev]
 ```
