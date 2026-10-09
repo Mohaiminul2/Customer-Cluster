@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from constants import SEGMENT_ORDER
-from rfm_analysis import compute_rfm, cluster_and_label, build_segment_summary
+from rfm_analysis import build_segment_summary, cluster_and_label, compute_rfm
 
 
 class TestComputeRFM:
@@ -86,8 +86,8 @@ class TestBuildSegmentSummary:
 class TestEdgeCases:
     """Edge-case tests for robustness."""
 
-    def test_single_customer_qcut_fails(self) -> None:
-        """qcut requires >= 5 unique values for quintile binning."""
+    def test_single_customer_graceful_fallback(self) -> None:
+        """Fewer than 5 customers: scores scale down instead of crashing."""
         df = pd.DataFrame({
             "InvoiceNo": ["1001"],
             "InvoiceDate": pd.to_datetime(["2023-06-15"]),
@@ -96,7 +96,50 @@ class TestEdgeCases:
             "UnitPrice": [10.0],
             "Revenue": [50.0],
         })
-        with pytest.raises(ValueError):
+        rfm = compute_rfm(df)
+        assert len(rfm) == 1
+        assert rfm["RFM_Score"].iloc[0] == 3
+        assert rfm["R_Score"].iloc[0] == 1
+        assert rfm["F_Score"].iloc[0] == 1
+        assert rfm["M_Score"].iloc[0] == 1
+
+    def test_three_customers_scale_to_three_bins(self) -> None:
+        """With 3 customers each metric is scored 1-3 and ordering is kept."""
+        rows = []
+        dates = ("2023-06-01", "2023-06-10", "2023-06-20")
+        revenues = (100.0, 50.0, 10.0)
+        for cid, date, revenue in zip(range(1, 4), dates, revenues):
+            rows.append({
+                "InvoiceNo": f"100{cid}",
+                "InvoiceDate": pd.Timestamp(date),
+                "CustomerID": cid,
+                "Quantity": 1,
+                "UnitPrice": revenue,
+                "Revenue": revenue,
+            })
+        df = pd.DataFrame(rows)
+        rfm = compute_rfm(df)
+        scored = rfm.set_index("CustomerID")
+        assert len(rfm) == 3
+        for col in ("R_Score", "F_Score", "M_Score"):
+            assert scored[col].min() >= 1
+            assert scored[col].max() <= 3
+        assert scored.loc[3, "R_Score"] == 3
+        assert scored.loc[1, "M_Score"] == 3
+        assert rfm["RFM_Score"].min() >= 3
+        assert rfm["RFM_Score"].max() <= 9
+
+    def test_empty_dataset_raises_clear_error(self) -> None:
+        """No customers left: a clear ValueError instead of a pandas crash."""
+        df = pd.DataFrame({
+            "InvoiceNo": [],
+            "InvoiceDate": pd.to_datetime([]),
+            "CustomerID": [],
+            "Quantity": [],
+            "UnitPrice": [],
+            "Revenue": [],
+        })
+        with pytest.raises(ValueError, match="No customers"):
             compute_rfm(df)
 
     def test_duplicate_invoices_are_counted_once(self) -> None:

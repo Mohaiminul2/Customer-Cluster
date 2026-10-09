@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+charts/
+data/*.xlsx
+.venv/
+.pytest_cache/
+.ruff_cache/

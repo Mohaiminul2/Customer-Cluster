@@ -11,6 +11,41 @@ A retail business has thousands of customers but treats them all the same — se
 This project automatically groups customers into five distinct segments based on their purchasing behaviour, then surfaces those segments in an interactive dashboard so marketing and operations teams can tailor their approach for each group.
 
 
+## Getting Started
+
+### Prerequisites
+- Python 3.10 or newer
+- The [Online Retail dataset](https://archive.ics.uci.edu/dataset/352/online+retail) from the UCI ML Repository — download `Online Retail.xlsx` and place it in `data/`
+
+### Installation
+```bash
+git clone https://github.com/Mohaiminul2/Customer-Cluster.git
+cd Customer-Cluster
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt   # reproducible install (generated lockfile)
+# or, for development (adds pytest, pytest-cov and ruff):
+pip install -e .[dev]
+```
+
+### Generate the segment data
+```bash
+python rfm_analysis.py
+```
+This cleans the raw transactions, computes RFM scores, runs K-Means clustering and writes `data/rfm_scored.csv`, `data/segment_summary.csv` and five charts under `charts/`.
+
+### Launch the dashboard
+```bash
+streamlit run app.py
+```
+
+### Tests & lint
+```bash
+pytest
+ruff check .
+```
+
+
 **The Five Segments**
 
 | Segment | What It Means | Business Action |
@@ -49,7 +84,7 @@ Each customer is scored on three dimensions using quintile binning:
  1. Short Term
 
 - [ ] Add streaming data support — Accept new transactions incrementally instead of reprocessing the entire dataset from scratch
-- [ ] Improve edge-case handling — Graceful fallback when dataset has fewer than 5 customers (currently `qcut` requires at least 5 data points)
+- [x] Improve edge-case handling — Graceful fallback when dataset has fewer than 5 customers (score bins now scale down automatically)
 - [ ] Add segment change tracking — Compare segment assignments across two time periods to identify customers moving between segments
 
 2. Medium Term

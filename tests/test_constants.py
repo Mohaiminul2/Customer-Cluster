@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from constants import (
     SEGMENT_COLORS,
-    SEGMENT_ORDER,
     SEGMENT_ICONS,
+    SEGMENT_ORDER,
 )
 
 

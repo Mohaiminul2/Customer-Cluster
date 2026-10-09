@@ -13,8 +13,11 @@ caps:
   frequency_quantile: 0.99  # Cap Frequency at this percentile
   recency_quantile: 0.99    # Cap Recency at this percentile
 
+display:
+  currency_symbol: "£"      # Currency symbol used across the dashboard
+
 heatmap:
   recency_bins: [0, 30, 90, 150, 210, 270]
   recency_labels: ["0-30", "31-90", "91-150", "151-210", "211-270", "271+"]
   monetary_bins: [0, 500, 2000, 5000, 20000]
-  monetary_labels: ["£0-500", "£501-2k", "£2k-5k", "£5k-20k", "£20k+"]
+  monetary_labels: ["0-500", "501-2k", "2k-5k", "5k-20k", "20k+"]

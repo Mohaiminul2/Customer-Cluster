@@ -10,21 +10,30 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
 
-import numpy as np
-import pandas as pd
-import yaml
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+import numpy as np
+import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
 
+from config_loader import BASE_DIR, load_config
 from constants import (
-    NAVY, WHITE, BLUE, TEAL, AMBER, RED, GREEN, GREY,
+    AMBER,
+    BLUE,
+    GREEN,
+    GREY,
+    NAVY,
+    WHITE,
+)
+from constants import (
     SEGMENT_COLORS as SEG_COLORS,
+)
+from constants import (
     SEGMENT_ORDER as SEG_ORDER,
 )
 
@@ -41,37 +50,7 @@ log = logging.getLogger("rfm")
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-os.makedirs(os.path.join(BASE_DIR, "charts"), exist_ok=True)
 OUT = os.path.join(BASE_DIR, "charts")
-
-# ---------------------------------------------------------------------------
-# Load configuration
-# ---------------------------------------------------------------------------
-def _load_config(path: str | None = None) -> dict[str, Any]:
-    """Load config.yaml from the project root."""
-    if path is None:
-        path = os.path.join(BASE_DIR, "config.yaml")
-    with open(path, "r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
-    return cfg
-
-CFG = _load_config()
-
-K_FINAL: int = CFG["clustering"]["k_final"]
-RANDOM_STATE: int = CFG["clustering"]["random_state"]
-N_INIT: int = CFG["clustering"]["n_init"]
-K_START: int = CFG["clustering"]["k_range_start"]
-K_END: int = CFG["clustering"]["k_range_end"]
-
-MON_CAP_Q: float = CFG["caps"]["monetary_quantile"]
-FREQ_CAP_Q: float = CFG["caps"]["frequency_quantile"]
-REC_CAP_Q: float = CFG["caps"]["recency_quantile"]
-
-REC_BINS: list[int] = CFG["heatmap"]["recency_bins"]
-REC_LABELS: list[str] = CFG["heatmap"]["recency_labels"]
-MON_BINS: list[int] = CFG["heatmap"]["monetary_bins"]
-MON_LABELS: list[str] = CFG["heatmap"]["monetary_labels"]
 
 # ---------------------------------------------------------------------------
 # Matplotlib defaults
@@ -125,6 +104,8 @@ def compute_rfm(df: pd.DataFrame) -> pd.DataFrame:
     """Compute per-customer RFM scores.
 
     Each metric is binned into quintiles (1-5) and summed into ``RFM_Score``.
+    Datasets with fewer than five customers fall back to fewer score bins
+    instead of raising.
 
     Args:
         df: Cleaned transaction data with ``CustomerID``, ``InvoiceDate``,
@@ -133,6 +114,9 @@ def compute_rfm(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame indexed by ``CustomerID`` with Recency, Frequency, Monetary,
         R_Score, F_Score, M_Score, and RFM_Score columns.
+
+    Raises:
+        ValueError: If no customers remain after aggregation.
     """
     snapshot = df["InvoiceDate"].max() + pd.Timedelta(days=1)
 
@@ -143,9 +127,23 @@ def compute_rfm(df: pd.DataFrame) -> pd.DataFrame:
     ).reset_index()
     rfm["Monetary"] = rfm["Monetary"].round(2)
 
-    rfm["R_Score"] = pd.qcut(rfm["Recency"].rank(method="first"), 5, labels=[5, 4, 3, 2, 1]).astype(int)
-    rfm["F_Score"] = pd.qcut(rfm["Frequency"].rank(method="first"), 5, labels=[1, 2, 3, 4, 5]).astype(int)
-    rfm["M_Score"] = pd.qcut(rfm["Monetary"].rank(method="first"),  5, labels=[1, 2, 3, 4, 5]).astype(int)
+    n_bins = min(5, len(rfm))
+    if n_bins == 0:
+        raise ValueError("No customers to score after aggregation.")
+    if n_bins < 5:
+        log.warning("Only %d customers: falling back from quintiles to %d score bins.",
+                    len(rfm), n_bins)
+
+    if n_bins == 1:
+        rfm["R_Score"] = 1
+        rfm["F_Score"] = 1
+        rfm["M_Score"] = 1
+    else:
+        r_labels = list(range(n_bins, 0, -1))
+        fm_labels = list(range(1, n_bins + 1))
+        rfm["R_Score"] = pd.qcut(rfm["Recency"].rank(method="first"), n_bins, labels=r_labels).astype(int)
+        rfm["F_Score"] = pd.qcut(rfm["Frequency"].rank(method="first"), n_bins, labels=fm_labels).astype(int)
+        rfm["M_Score"] = pd.qcut(rfm["Monetary"].rank(method="first"), n_bins, labels=fm_labels).astype(int)
     rfm["RFM_Score"] = rfm["R_Score"] + rfm["F_Score"] + rfm["M_Score"]
 
     log.info("RFM scores computed (range %d-%d)", rfm["RFM_Score"].min(), rfm["RFM_Score"].max())
@@ -165,29 +163,35 @@ def cluster_and_label(rfm: pd.DataFrame) -> tuple[pd.DataFrame, list[float], lis
     Returns:
         Tuple of (labelled rfm, inertia values, silhouette scores, K range).
     """
-    MON_CAP = rfm["Monetary"].quantile(MON_CAP_Q)
-    FREQ_CAP = rfm["Frequency"].quantile(FREQ_CAP_Q)
-    REC_CAP = rfm["Recency"].quantile(REC_CAP_Q)
+    cfg = load_config()
+    clustering = cfg["clustering"]
+    caps = cfg["caps"]
+
+    mon_cap = rfm["Monetary"].quantile(caps["monetary_quantile"])
+    freq_cap = rfm["Frequency"].quantile(caps["frequency_quantile"])
+    rec_cap = rfm["Recency"].quantile(caps["recency_quantile"])
 
     rfm_capped = rfm[["Recency", "Frequency", "Monetary"]].copy()
-    rfm_capped["Monetary"]  = rfm_capped["Monetary"].clip(upper=MON_CAP)
-    rfm_capped["Frequency"] = rfm_capped["Frequency"].clip(upper=FREQ_CAP)
-    rfm_capped["Recency"]   = rfm_capped["Recency"].clip(upper=REC_CAP)
+    rfm_capped["Monetary"]  = rfm_capped["Monetary"].clip(upper=mon_cap)
+    rfm_capped["Frequency"] = rfm_capped["Frequency"].clip(upper=freq_cap)
+    rfm_capped["Recency"]   = rfm_capped["Recency"].clip(upper=rec_cap)
 
     scaler   = StandardScaler()
-    X_scaled = scaler.fit_transform(rfm_capped)
+    x_scaled = scaler.fit_transform(rfm_capped)
 
-    K_RANGE = range(K_START, K_END + 1)
+    k_range = range(clustering["k_range_start"], clustering["k_range_end"] + 1)
     inertia: list[float] = []
     sil: list[float] = []
-    for k in K_RANGE:
-        km  = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
-        lbl = km.fit_predict(X_scaled)
+    for k in k_range:
+        km  = KMeans(n_clusters=k, random_state=clustering["random_state"], n_init=10)
+        lbl = km.fit_predict(x_scaled)
         inertia.append(km.inertia_)
-        sil.append(silhouette_score(X_scaled, lbl))
+        sil.append(silhouette_score(x_scaled, lbl))
 
-    km_final = KMeans(n_clusters=K_FINAL, random_state=RANDOM_STATE, n_init=N_INIT)
-    rfm["Cluster"] = km_final.fit_predict(X_scaled)
+    km_final = KMeans(n_clusters=clustering["k_final"],
+                      random_state=clustering["random_state"],
+                      n_init=clustering["n_init"])
+    rfm["Cluster"] = km_final.fit_predict(x_scaled)
 
     rank_df = (
         rfm.groupby("Cluster")
@@ -221,7 +225,7 @@ def cluster_and_label(rfm: pd.DataFrame) -> tuple[pd.DataFrame, list[float], lis
 
     log.info("Cluster -> Segment mapping:\n%s",
              rfm.groupby(["Cluster", "Segment"])["RFM_Score"].mean().round(1).to_string())
-    return rfm, inertia, sil, K_RANGE
+    return rfm, inertia, sil, k_range
 
 
 def build_segment_summary(rfm: pd.DataFrame) -> pd.DataFrame:
@@ -260,8 +264,11 @@ def build_segment_summary(rfm: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def _save(fig: plt.Figure, name: str) -> None:
-    """Save a matplotlib figure and close it."""
-    fig.savefig(os.path.join(OUT, name), dpi=150, bbox_inches="tight", facecolor=NAVY)
+    """Save a matplotlib figure atomically and close it."""
+    final_path = os.path.join(OUT, name)
+    tmp_path = final_path + ".tmp"
+    fig.savefig(tmp_path, format="png", dpi=150, bbox_inches="tight", facecolor=NAVY)
+    os.replace(tmp_path, final_path)
     plt.close(fig)
     log.info("Saved %s", name)
 
@@ -271,7 +278,7 @@ def generate_charts(
     seg: pd.DataFrame,
     inertia: list[float],
     sil: list[float],
-    K_RANGE: range,
+    k_range: range,
 ) -> None:
     """Generate all five static PNG charts.
 
@@ -280,8 +287,11 @@ def generate_charts(
         seg: Segment summary DataFrame.
         inertia: Inertia values per K.
         sil: Silhouette scores per K.
-        K_RANGE: Range of K values tested.
+        k_range: Range of K values tested.
     """
+    os.makedirs(OUT, exist_ok=True)
+    k_final = load_config()["clustering"]["k_final"]
+
     seg_c = [SEG_COLORS[s] for s in seg["Segment"]]
     palette = {s: SEG_COLORS[s] for s in SEG_ORDER}
 
@@ -289,15 +299,15 @@ def generate_charts(
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4), facecolor=NAVY)
     fig.suptitle("Optimal Cluster Count (K)", color=WHITE, fontsize=13, fontweight="bold")
 
-    ax1.plot(list(K_RANGE), inertia, "o-", color=BLUE, lw=2)
-    ax1.axvline(K_FINAL, color=AMBER, ls="--", alpha=0.7, label=f"K={K_FINAL}")
+    ax1.plot(list(k_range), inertia, "o-", color=BLUE, lw=2)
+    ax1.axvline(k_final, color=AMBER, ls="--", alpha=0.7, label=f"K={k_final}")
     ax1.set_title("Elbow - Inertia", color=WHITE)
     ax1.set_xlabel("K")
     ax1.grid(True)
     ax1.legend(facecolor=NAVY, edgecolor=WHITE)
 
-    ax2.plot(list(K_RANGE), sil, "o-", color=GREEN, lw=2)
-    ax2.axvline(K_FINAL, color=AMBER, ls="--", alpha=0.7, label=f"K={K_FINAL}")
+    ax2.plot(list(k_range), sil, "o-", color=GREEN, lw=2)
+    ax2.axvline(k_final, color=AMBER, ls="--", alpha=0.7, label=f"K={k_final}")
     ax2.set_title("Silhouette Score", color=WHITE)
     ax2.set_xlabel("K")
     ax2.grid(True)
@@ -375,8 +385,8 @@ def generate_charts(
     _save(fig, "04_scatter.png")
 
     # --- 5. Radar chart ---
-    N = 3
-    angles = [n / N * 2 * np.pi for n in range(N)] + [0]
+    n_dims = 3
+    angles = [n / n_dims * 2 * np.pi for n in range(n_dims)] + [0]
     rfm_n = rfm.copy()
     for c in ["Recency", "Frequency", "Monetary"]:
         mn, mx = rfm_n[c].min(), rfm_n[c].max()
@@ -409,16 +419,23 @@ def generate_charts(
 # Main
 # ===========================================================================
 
+def _atomic_write_csv(df: pd.DataFrame, path: str) -> None:
+    """Write a DataFrame to CSV atomically (write to a temp file, then rename)."""
+    tmp_path = path + ".tmp"
+    df.to_csv(tmp_path, index=False)
+    os.replace(tmp_path, path)
+
+
 def main() -> None:
     """Run the full segmentation pipeline."""
     df = load_and_clean()
     rfm = compute_rfm(df)
-    rfm, inertia, sil, K_RANGE = cluster_and_label(rfm)
+    rfm, inertia, sil, k_range = cluster_and_label(rfm)
     seg = build_segment_summary(rfm)
-    generate_charts(rfm, seg, inertia, sil, K_RANGE)
+    generate_charts(rfm, seg, inertia, sil, k_range)
 
-    rfm.to_csv(os.path.join(BASE_DIR, "data", "rfm_scored.csv"), index=False)
-    seg.to_csv(os.path.join(BASE_DIR, "data", "segment_summary.csv"), index=False)
+    _atomic_write_csv(rfm, os.path.join(BASE_DIR, "data", "rfm_scored.csv"))
+    _atomic_write_csv(seg, os.path.join(BASE_DIR, "data", "segment_summary.csv"))
     log.info("Data saved. Segment distribution:\n%s", rfm["Segment"].value_counts().to_string())
 
 
