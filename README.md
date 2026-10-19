@@ -68,11 +68,7 @@ Follow these steps to get your development environment running:
 
 ## 🚀 Usage
 
-The dashboard opens on the Overview tab. Use the sidebar to filter the entire app — quick-view presets, segments, RFM score, days since last purchase and lifetime spend. Every number on screen is derived from the customers currently in view.
-
-![Customer Segmentation dashboard — Overview tab](docs/screenshots/overview.png)
-
-Navigate the five tabs:
+The dashboard opens on the Overview tab. Use the sidebar to filter the entire app — quick-view presets, segments, RFM score, days since last purchase and lifetime spend. Navigate the five tabs:
 
 - **Overview:** auto-generated key takeaways, customers-vs-revenue share, revenue concentration (Pareto) curve, segment profile heatmap and a recency × spend grid
 - **Segment Deep Dive:** one segment vs all customers — median comparisons, log-scale distributions, top customers and recommended actions
@@ -104,7 +100,6 @@ Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information
 ## ✉️ Developer
 
 ```
-Mohaiminul Islam
-Senior Business Analyst at FRISTA
+Mohaiminul Islam | MBA FIN | BS CSE
 Email: Mohaiminul.islam503@gmail.com
 ```
