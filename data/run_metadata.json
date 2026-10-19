@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-10-19T19:05:34+00:00",
+  "snapshot_date": "2011-12-10",
+  "first_transaction": "2010-12-01",
+  "customers": 4320,
+  "transaction_rows": 401005,
+  "k_final": 5,
+  "silhouette_at_k_final": 0.4756,
+  "best_k_by_silhouette": 2,
+  "cleaning": {
+    "drop_duplicates": true,
+    "net_cancellations": true,
+    "non_product_stock_codes": [
+      "D",
+      "M",
+      "S",
+      "B",
+      "CRUK",
+      "BANK CHARGES",
+      "AMAZONFEE"
+    ]
+  },
+  "cleaning_stats": {
+    "raw_rows": 541909,
+    "rows_without_customer": 135080,
+    "duplicate_rows_removed": 5225,
+    "non_product_rows_removed": 565,
+    "sales_rows": 392401,
+    "cancellation_rows": 8604
+  }
+}

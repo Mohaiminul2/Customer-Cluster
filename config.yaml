@@ -1,0 +1,44 @@
+# Customer Segmentation — Configuration
+# Edit these values to retune the pipeline without changing code.
+
+clustering:
+  k_final: 5               # Number of K-Means clusters
+  random_state: 42
+  n_init: 20                # K-Means initializations for final model
+  k_range_start: 2
+  k_range_end: 8
+
+caps:
+  monetary_quantile: 0.99   # Cap Monetary at this percentile
+  frequency_quantile: 0.99  # Cap Frequency at this percentile
+  recency_quantile: 0.99    # Cap Recency at this percentile
+
+display:
+  currency_symbol: "£"      # Currency symbol used across the dashboard
+
+heatmap:
+  recency_bins: [0, 30, 90, 150, 210, 270]
+  recency_labels: ["0-30", "31-90", "91-150", "151-210", "211-270", "271+"]
+  monetary_bins: [0, 500, 2000, 5000, 20000]
+  monetary_labels: ["0-500", "501-2k", "2k-5k", "5k-20k", "20k+"]
+
+cleaning:
+  drop_duplicates: true       # drop exact duplicate transaction rows
+  net_cancellations: true     # subtract cancelled ("C" invoices) revenue from each customer's spend
+  # StockCodes that are accounting entries, not products (matched case-insensitively).
+  # Add POST / DOT / C2 here if you also want to exclude shipping charges.
+  non_product_stock_codes: ["D", "M", "S", "B", "CRUK", "BANK CHARGES", "AMAZONFEE"]
+
+playbook:                      # thresholds that size each segment's target list
+  champion_watch_days: 45      # Champions: flag if no purchase for this many days
+  loyal_top_share: 0.20        # Loyal: top share by RFM score then spend = Champion candidates
+  potential_recent_days: 30    # Potential Loyalists: bought within this many days...
+                               # ...and below the median order count of the Loyal tier
+  at_risk_min_orders: 3        # At Risk: win back customers with at least this many orders
+  lost_top_share: 0.25         # Lost: reactivate only the top share by historical spend
+
+roi_defaults:                  # illustrative starting points for the campaign simulator
+  cost_per_contact: 0.50
+  gross_margin: 0.30
+  discount: 0.10
+  response_rate: 0.05
