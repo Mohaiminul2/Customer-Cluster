@@ -2,7 +2,7 @@
 
 An end-to-end customer segmentation system that groups retail customers into five value tiers using **RFM scoring** and **K-Means clustering**, then presents the results in an interactive Streamlit dashboard. Built for marketing and operations teams who need to tailor campaigns, win-backs and retention plays to different kinds of customers — instead of treating them all the same.
 
-## 🚀 Features
+## Features
 
 - **RFM scoring:** every customer scored 1–5 on Recency, Frequency and Monetary; the three combine into a 3–15 RFM score
 - **K-Means segmentation:** outliers capped at the 99th percentile, features standardised, clusters ranked by value and labelled best-to-worst (Champions → Lost / Churned)
@@ -13,7 +13,7 @@ An end-to-end customer segmentation system that groups retail customers into fiv
 - **Customer Explorer:** customer lookup with percentile ranks, peer comparison and an interactive recency-vs-spend map
 - **Honest diagnostics:** elbow and silhouette sweep shown openly — including the fact that K=2 separates best statistically and K=5 is a business choice
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Dashboard (frontend):** Streamlit, Plotly, custom dark-theme CSS
 - **Analytics / ML (backend):** Python 3.10+, pandas, NumPy, scikit-learn (K-Means, StandardScaler, silhouette)
@@ -22,7 +22,7 @@ An end-to-end customer segmentation system that groups retail customers into fiv
 - **Configuration:** PyYAML — every tunable lives in `config.yaml`
 - **Testing / linting:** pytest, pytest-cov, ruff
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 
@@ -31,7 +31,7 @@ Before you begin, ensure you have met the following requirements:
 - Git installed on your local machine
 - The [Online Retail dataset](https://archive.ics.uci.edu/dataset/352/online+retail) from the UCI ML Repository (~22 MB Excel file)
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 Follow these steps to get your development environment running:
 
@@ -66,9 +66,11 @@ Follow these steps to get your development environment running:
    streamlit run app.py
    ```
 
-## 🚀 Usage
+## Usage
 
-The dashboard opens on the Overview tab. Use the sidebar to filter the entire app — quick-view presets, segments, RFM score, days since last purchase and lifetime spend. Navigate the five tabs:
+The dashboard opens on the Overview tab. Use the sidebar to filter the entire app — quick-view presets, segments, RFM score, days since last purchase and lifetime spend. 
+
+Navigate the five tabs:
 
 - **Overview:** auto-generated key takeaways, customers-vs-revenue share, revenue concentration (Pareto) curve, segment profile heatmap and a recency × spend grid
 - **Segment Deep Dive:** one segment vs all customers — median comparisons, log-scale distributions, top customers and recommended actions
@@ -83,7 +85,7 @@ pytest            # 97 tests
 ruff check .      # lint
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps to contribute:
 
@@ -93,13 +95,7 @@ Contributions are welcome! Please follow these steps to contribute:
 4. Push to the Branch (`git push origin feature/AmazingFeature`).
 5. Open a Pull Request.
 
-## 📄 License
+## License
 
-Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
+See [`LICENSE`](LICENSE) for detail information.
 
-## ✉️ Developer
-
-```
-Mohaiminul Islam | MBA FIN | BS CSE
-Email: Mohaiminul.islam503@gmail.com
-```

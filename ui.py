@@ -92,9 +92,9 @@ _CSS = """
      One grid drives KPI cards, insight cards and panels. Column counts come
      from container queries on the grid's own width (not the viewport), so
      layouts stay correct with the sidebar open or closed. Rows are always
-     equal height (grid-auto-rows: 1fr) and wrap into even rows. */
+     equal height within each row and wrap into even rows. */
   .cq { container-type: inline-size; width: 100%; }
-  .card-grid { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; }
+  .card-grid { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
   .card-grid[data-size="lg"] { gap: var(--gap); }
 __GRID_RULES__
 
@@ -102,7 +102,7 @@ __GRID_RULES__
               background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
   .kpi-card { container-type: inline-size; display: flex; flex-direction: column;
               padding: 1rem 1.15rem 1.05rem; min-height: var(--kpi-h); }
-  :root { --kpi-h: 10.5rem; }
+  :root { --kpi-h: 8rem; }
   .kpi-accent { width: 28px; height: 3px; border-radius: 2px; margin-bottom: 0.8rem; flex-shrink: 0; }
   .kpi-label { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
                font-weight: 600; margin-bottom: 0.4rem; line-height: 1.25; min-height: 2.5em; }

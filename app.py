@@ -278,8 +278,8 @@ kpis = [
      f"<b>{VIEW['customers'] / FULL['customers'] * 100:.0f}%</b> of all {FULL['customers']:,.0f}"),
     ("Revenue", fmt_money(VIEW["revenue"], CURRENCY),
      f"<b>{VIEW['revenue'] / FULL['revenue'] * 100:.0f}%</b> of total revenue"),
-    ("Value per customer", fmt_money(VIEW["avg_customer_value"], CURRENCY), "average lifetime spend"),
-    ("Order value", fmt_money(VIEW["avg_order_value"], CURRENCY), "average revenue per order"),
+    ("Value per customer", fmt_money(VIEW["avg_customer_value"], CURRENCY), "avg. lifetime spend"),
+    ("Order value", fmt_money(VIEW["avg_order_value"], CURRENCY), "avg. revenue per order"),
     ("Orders per customer", f"{VIEW['avg_orders']:.1f}", f"median <b>{fmt_count(VIEW['median_frequency'])}</b>"),
     ("Days since last order", f"{VIEW['median_recency']:.0f}", "median across customers"),
 ]
@@ -302,11 +302,6 @@ tab_over, tab_deep, tab_play, tab_explore, tab_method = st.tabs([
 # TAB 1 — OVERVIEW
 # ════════════════════════════════════════════════════════════════════════════
 with tab_over:
-    insights = generate_insights(rfm, seg, CURRENCY, PLAYBOOK_PARAMS)
-    if insights:
-        ui.section("Key takeaways")
-        ui.card_grid([ui.insight_card(i.tag, i.headline, i.detail, i.color) for i in insights], "lg")
-
     ui.section("Where the value sits")
     left, right = st.columns(2, gap="large")
     with left:
@@ -322,7 +317,7 @@ with tab_over:
     with right:
         t20, t1 = top_share(rfm["Monetary"], 0.20) * 100, top_share(rfm["Monetary"], 0.01) * 100
         ui.chart_header(
-            "Revenue is concentrated in a small group",
+            "Revenue is concentrated in group",
             f"The <b>top 20%</b> of customers generate <b>{t20:.0f}%</b> of revenue; "
             f"the top 1% generate <b>{t1:.0f}%</b>. The further the curve bows from the dotted line, "
             "the more unequal.", lines=3)
@@ -346,7 +341,14 @@ with tab_over:
                      "ov_band")
         st.radio("Show in grid", ["Customers", "Share of revenue"], horizontal=True, key="band_metric")
 
-# ════════════════════════════════════════════════════════════════════════════
+    insights = generate_insights(rfm, seg, CURRENCY, PLAYBOOK_PARAMS)
+    if insights:
+        ui.section("Key takeaways")
+        for i in insights:
+            with st.expander(f"{i.tag} — {i.headline}", expanded=False):
+                st.markdown(i.detail)
+
+# ═════════════════════════════════════════════════════════════════════════════
 # TAB 2 — SEGMENT DEEP DIVE
 # ════════════════════════════════════════════════════════════════════════════
 with tab_deep:
@@ -599,42 +601,6 @@ with tab_explore:
 # TAB 5 — METHOD & DIAGNOSTICS
 # ════════════════════════════════════════════════════════════════════════════
 with tab_method:
-    ui.section("How the segments are built")
-    caps = CFG["caps"]
-    steps = [
-        ("Clean", "Keep real sales. Drop accounting entries (discounts, manual lines, fees) and duplicates. "
-                  "Cancelled orders are netted off each customer's spend."),
-        ("Score", "For every customer: <b>Recency</b> (days since last order), <b>Frequency</b> (orders) and "
-                  "<b>Monetary</b> (lifetime spend). Each is cut into quintiles scored 1-5; the three add up to "
-                  "an RFM score (3-15)."),
-        ("Cluster", f"K-Means on the standardised R, F and M, with outliers capped at the "
-                    f"{caps['monetary_quantile'] * 100:.0f}th percentile so a few mega-spenders do not dominate."),
-        ("Label", f"The {CFG['clustering']['k_final']} clusters are ranked by value "
-                  "(standardised Frequency + Monetary − Recency) and named best-to-worst: "
-                  "Champions to Lost / Churned."),
-    ]
-    ui.card_grid([
-        ui.panel(f'<div class="panel-title"><span class="step-num">{i}</span>{title}</div><p>{text}</p>')
-        for i, (title, text) in enumerate(steps, start=1)
-    ], "lg")
-
-    ui.section("This data run")
-    if not META:
-        st.info("No run metadata found: `data/rfm_scored.csv` was generated before the latest cleaning "
-                "fixes (cancellation netting, accounting-code filter). Run `python rfm_analysis.py` with "
-                "`Online Retail.xlsx` in `data/` to refresh it.")
-    else:
-        stats = META.get("cleaning_stats", {})
-        run_cards = [
-            ("Data as of", str(META.get("snapshot_date", "n/a")), f"first order {META.get('first_transaction', 'n/a')}"),
-            ("Customers scored", f"{META.get('customers', 0):,}", "after cleaning"),
-            ("Transactions used", f"{META.get('transaction_rows', 0):,}",
-             f"{stats.get('duplicate_rows_removed', 0):,} duplicates and "
-             f"{stats.get('non_product_rows_removed', 0):,} accounting rows removed"),
-            ("Cluster separation", f"{META['silhouette_at_k_final']:.2f}" if META.get("silhouette_at_k_final") is not None else "n/a",
-             "silhouette score (1 = perfect)"),
-        ]
-        ui.kpi_row(run_cards)
 
     ui.section("Why this number of clusters?")
     diag = _load_diagnostics(MTIME)
@@ -660,6 +626,26 @@ with tab_method:
         "Segments come from clustering raw recency, frequency and spend, not from cutting the RFM score, "
         "so neighbouring segments overlap on score.")
     ui.show_plot(score_distribution(rfm), "mt_scores")
+
+    ui.section("This data run")
+    if not META:
+        st.info("No run metadata found: `data/rfm_scored.csv` was generated before the latest cleaning "
+                "fixes (cancellation netting, accounting-code filter). Run `python rfm_analysis.py` with "
+                "`Online Retail.xlsx` in `data/` to refresh it.")
+    else:
+        stats = META.get("cleaning_stats", {})
+        run_items = [
+            ("Data as of", str(META.get("snapshot_date", "n/a")), f"first order {META.get('first_transaction', 'n/a')}"),
+            ("Customers scored", f"{META.get('customers', 0):,}", "after cleaning"),
+            ("Transactions used", f"{META.get('transaction_rows', 0):,}",
+             f"{stats.get('duplicate_rows_removed', 0):,} duplicates and "
+             f"{stats.get('non_product_rows_removed', 0):,} accounting rows removed"),
+            ("Cluster separation", f"{META['silhouette_at_k_final']:.2f}" if META.get("silhouette_at_k_final") is not None else "n/a",
+             "silhouette score (1 = perfect)"),
+        ]
+        for label, value, sub in run_items:
+            with st.expander(f"{label}: {value}", expanded=False):
+                st.markdown(sub)
 
     ui.section("Definitions and limits")
     pot = rfm_full[rfm_full["Segment"] == "Potential Loyalists"]
